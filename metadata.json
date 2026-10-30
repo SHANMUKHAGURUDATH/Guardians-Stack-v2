@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Guardian Stack — Insurance Intelligence Platform",
+  "description": "Enterprise-grade insurance intelligence, financial risk analysis, actuarial HLV \u0026 Net Needs calculations, and dynamic policy recommendation platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

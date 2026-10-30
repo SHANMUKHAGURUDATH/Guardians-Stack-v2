@@ -1,0 +1,475 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net — Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // Hardened Global Primitives
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Master Gate: Verifies parent /users/{userId} exists and belongs to caller
+    function hasValidParentUser(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+        get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+    }
+
+    // =========================================================================
+    // Entity Validation Blueprints (Synchronized with firebase-blueprint.json)
+    // =========================================================================
+
+    function isValidUserAccount(data) {
+      return request.auth != null &&
+        data.keys().hasAll(['uid', 'displayName', 'authProvider', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'authProvider', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+        data.authProvider is string && data.authProvider.size() <= 32 &&
+        (data.authProvider == 'password' || data.authProvider == 'google.com') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateProfile(data) {
+      return request.auth != null &&
+        data.keys().hasAll([
+          'ownerId', 'email', 'phone', 'dateOfBirth', 'city', 'occupation', 'bio', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'email', 'phone', 'dateOfBirth', 'city', 'occupation', 'bio', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 254 &&
+        data.phone is string && data.phone.size() <= 30 &&
+        data.dateOfBirth is string && data.dateOfBirth.size() <= 20 &&
+        data.city is string && data.city.size() <= 100 &&
+        data.occupation is string && data.occupation.size() <= 100 &&
+        data.bio is string && data.bio.size() <= 500 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserSettings(data) {
+      return request.auth != null &&
+        data.keys().hasAll([
+          'ownerId', 'theme', 'language', 'notifyPremiumAlerts', 'notifyPolicyUpdates',
+          'notifyNomineeReminders', 'notifySecurityAlerts', 'notifySupportUpdates',
+          'maskSensitiveData', 'sessionPersistence', 'activityAuditEnabled', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'theme', 'language', 'notifyPremiumAlerts', 'notifyPolicyUpdates',
+          'notifyNomineeReminders', 'notifySecurityAlerts', 'notifySupportUpdates',
+          'maskSensitiveData', 'sessionPersistence', 'activityAuditEnabled', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.theme is string && data.theme.size() <= 16 &&
+        (data.theme == 'dark' || data.theme == 'light' || data.theme == 'system') &&
+        data.language is string && data.language.size() <= 32 &&
+        (data.language == 'English' || data.language == 'Hindi' || data.language == 'Telugu' ||
+         data.language == 'Tamil' || data.language == 'Kannada' || data.language == 'Marathi' ||
+         data.language == 'Bengali') &&
+        data.notifyPremiumAlerts is bool &&
+        data.notifyPolicyUpdates is bool &&
+        data.notifyNomineeReminders is bool &&
+        data.notifySecurityAlerts is bool &&
+        data.notifySupportUpdates is bool &&
+        data.maskSensitiveData is bool &&
+        data.sessionPersistence is string && data.sessionPersistence.size() <= 16 &&
+        (data.sessionPersistence == 'local' || data.sessionPersistence == 'session') &&
+        data.activityAuditEnabled is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidFamilyMember(data) {
+      return request.auth != null &&
+        data.keys().hasAll([
+          'ownerId', 'fullName', 'relationship', 'dateOfBirth', 'gender',
+          'phone', 'email', 'address', 'bloodGroup', 'occupation',
+          'isDependent', 'emergencyContact', 'medicalNotes', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'fullName', 'relationship', 'dateOfBirth', 'gender',
+          'phone', 'email', 'address', 'bloodGroup', 'occupation',
+          'isDependent', 'emergencyContact', 'medicalNotes', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 100 &&
+        data.relationship is string && data.relationship.size() <= 32 &&
+        (data.relationship == 'Father' || data.relationship == 'Mother' || data.relationship == 'Spouse' ||
+         data.relationship == 'Son' || data.relationship == 'Daughter' || data.relationship == 'Brother' ||
+         data.relationship == 'Sister' || data.relationship == 'Father-in-Law' ||
+         data.relationship == 'Mother-in-Law' || data.relationship == 'Grandparent' ||
+         data.relationship == 'Other') &&
+        data.dateOfBirth is string && data.dateOfBirth.size() >= 4 && data.dateOfBirth.size() <= 20 &&
+        data.gender is string && data.gender.size() <= 16 &&
+        (data.gender == 'Male' || data.gender == 'Female' || data.gender == 'Other') &&
+        data.phone is string && data.phone.size() <= 30 &&
+        data.email is string && data.email.size() <= 254 &&
+        data.address is string && data.address.size() <= 300 &&
+        data.bloodGroup is string && data.bloodGroup.size() <= 10 &&
+        data.occupation is string && data.occupation.size() <= 100 &&
+        data.isDependent is bool &&
+        data.emergencyContact is bool &&
+        data.medicalNotes is string && data.medicalNotes.size() <= 500 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidFamilyNominee(data) {
+      return request.auth != null &&
+        data.keys().hasAll([
+          'ownerId', 'nomineeName', 'relationship', 'dateOfBirth', 'phone', 'email', 'address',
+          'linkedMemberId', 'linkedMemberName', 'policyId', 'policyName', 'allocationPct',
+          'guardianName', 'notes', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'nomineeName', 'relationship', 'dateOfBirth', 'phone', 'email', 'address',
+          'linkedMemberId', 'linkedMemberName', 'policyId', 'policyName', 'allocationPct',
+          'guardianName', 'notes', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.nomineeName is string && data.nomineeName.size() >= 1 && data.nomineeName.size() <= 100 &&
+        data.relationship is string && data.relationship.size() <= 32 &&
+        (data.relationship == 'Spouse' || data.relationship == 'Father' || data.relationship == 'Mother' ||
+         data.relationship == 'Son' || data.relationship == 'Daughter' || data.relationship == 'Brother' ||
+         data.relationship == 'Sister' || data.relationship == 'Grandparent' ||
+         data.relationship == 'Legal Heir' || data.relationship == 'Trust' || data.relationship == 'Other') &&
+        data.dateOfBirth is string && data.dateOfBirth.size() >= 4 && data.dateOfBirth.size() <= 20 &&
+        data.phone is string && data.phone.size() <= 30 &&
+        data.email is string && data.email.size() <= 254 &&
+        data.address is string && data.address.size() <= 300 &&
+        data.linkedMemberId is string && data.linkedMemberId.size() >= 1 && data.linkedMemberId.size() <= 128 &&
+        data.linkedMemberId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.linkedMemberName is string && data.linkedMemberName.size() >= 1 && data.linkedMemberName.size() <= 100 &&
+        data.policyId is string && data.policyId.size() >= 1 && data.policyId.size() <= 128 &&
+        data.policyId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.policyName is string && data.policyName.size() >= 1 && data.policyName.size() <= 150 &&
+        (data.allocationPct is int || data.allocationPct is float) &&
+        data.allocationPct > 0 && data.allocationPct <= 100 &&
+        data.guardianName is string && data.guardianName.size() <= 100 &&
+        data.notes is string && data.notes.size() <= 400 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSupportTicket(data) {
+      return request.auth != null &&
+        data.keys().hasAll([
+          'ownerId', 'ticketNumber', 'subject', 'category', 'priority', 'status',
+          'description', 'contactEmail', 'relatedPolicyId', 'resolutionNote', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'ticketNumber', 'subject', 'category', 'priority', 'status',
+          'description', 'contactEmail', 'relatedPolicyId', 'resolutionNote', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.ticketNumber is string && data.ticketNumber.size() >= 4 && data.ticketNumber.size() <= 32 &&
+        data.ticketNumber.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.subject is string && data.subject.size() >= 3 && data.subject.size() <= 150 &&
+        data.category is string && data.category.size() <= 32 &&
+        (data.category == 'Account' || data.category == 'Technical' ||
+         data.category == 'General' || data.category == 'Other') &&
+        data.priority is string && data.priority.size() <= 16 &&
+        (data.priority == 'Low' || data.priority == 'Medium' ||
+         data.priority == 'High' || data.priority == 'Urgent') &&
+        data.status is string && data.status.size() <= 20 &&
+        (data.status == 'Open' || data.status == 'In Progress' ||
+         data.status == 'Resolved' || data.status == 'Closed') &&
+        data.description is string && data.description.size() >= 5 && data.description.size() <= 2000 &&
+        data.contactEmail is string && data.contactEmail.size() >= 3 && data.contactEmail.size() <= 254 &&
+        data.relatedPolicyId is string && data.relatedPolicyId.size() <= 128 &&
+        data.resolutionNote is string && data.resolutionNote.size() <= 1000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // =========================================================================
+    // Collection Rules
+    // =========================================================================
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+
+      allow create: if isVerifiedUser() &&
+        isOwner(userId) &&
+        isValidId(userId) &&
+        isValidUserAccount(incoming()) &&
+        incoming().uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidUserAccount(incoming()) &&
+        isVerifiedUser() &&
+        isOwner(userId) &&
+        isValidId(userId) &&
+        incoming().uid == existing().uid &&
+        incoming().authProvider == existing().authProvider &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt'])
+        );
+
+      allow delete: if isVerifiedUser() && isOwner(userId) && isValidId(userId);
+
+      // Isolated PII Profile Subcollection
+      match /private/{profileId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(profileId) && hasValidParentUser(userId);
+
+        allow create: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(profileId) &&
+          isValidUserPrivateProfile(incoming()) &&
+          incoming().ownerId == userId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+
+        allow update: if isSignedIn() &&
+          isValidUserPrivateProfile(incoming()) &&
+          isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(profileId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'email', 'phone', 'dateOfBirth', 'city', 'occupation', 'bio', 'updatedAt'
+            ])
+          ) &&
+          hasValidParentUser(userId);
+
+        allow delete: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(profileId) &&
+          hasValidParentUser(userId);
+      }
+
+      // User Settings & Preferences Subcollection
+      match /settings/{settingId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(settingId) && hasValidParentUser(userId);
+
+        allow create: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(settingId) &&
+          isValidUserSettings(incoming()) &&
+          incoming().ownerId == userId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+
+        allow update: if isSignedIn() &&
+          isValidUserSettings(incoming()) &&
+          isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(settingId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'theme', 'language', 'notifyPremiumAlerts', 'notifyPolicyUpdates',
+              'notifyNomineeReminders', 'notifySecurityAlerts', 'notifySupportUpdates',
+              'maskSensitiveData', 'sessionPersistence', 'activityAuditEnabled', 'updatedAt'
+            ])
+          ) &&
+          hasValidParentUser(userId);
+
+        allow delete: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(settingId) &&
+          hasValidParentUser(userId);
+      }
+
+      // Family Members Subcollection
+      match /familyMembers/{memberId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(memberId) && hasValidParentUser(userId);
+
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(memberId) &&
+          isValidFamilyMember(incoming()) &&
+          incoming().ownerId == userId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+
+        allow update: if isSignedIn() &&
+          isValidFamilyMember(incoming()) &&
+          isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(memberId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'fullName', 'relationship', 'dateOfBirth', 'gender', 'phone', 'email',
+              'address', 'bloodGroup', 'occupation', 'isDependent', 'emergencyContact',
+              'medicalNotes', 'updatedAt'
+            ])
+          ) &&
+          hasValidParentUser(userId);
+
+        allow delete: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(memberId) &&
+          hasValidParentUser(userId);
+      }
+
+      // Family Nominees Subcollection
+      match /nominees/{nomineeId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(nomineeId) && hasValidParentUser(userId);
+
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(nomineeId) &&
+          isValidFamilyNominee(incoming()) &&
+          incoming().ownerId == userId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId) &&
+          (
+            incoming().linkedMemberId == 'SELF' ||
+            exists(/databases/$(database)/documents/users/$(userId)/familyMembers/$(incoming().linkedMemberId))
+          );
+
+        allow update: if isSignedIn() &&
+          isValidFamilyNominee(incoming()) &&
+          isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(nomineeId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'nomineeName', 'relationship', 'dateOfBirth', 'phone', 'email', 'address',
+              'linkedMemberId', 'linkedMemberName', 'policyId', 'policyName', 'allocationPct',
+              'guardianName', 'notes', 'updatedAt'
+            ])
+          ) &&
+          hasValidParentUser(userId) &&
+          (
+            incoming().linkedMemberId == 'SELF' ||
+            exists(/databases/$(database)/documents/users/$(userId)/familyMembers/$(incoming().linkedMemberId))
+          );
+
+        allow delete: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(nomineeId) &&
+          hasValidParentUser(userId);
+      }
+
+      // Help & Support Tickets Subcollection
+      match /supportTickets/{ticketId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(ticketId) && hasValidParentUser(userId);
+
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(ticketId) &&
+          isValidSupportTicket(incoming()) &&
+          incoming().ownerId == userId &&
+          incoming().status == 'Open' &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          hasValidParentUser(userId);
+
+        allow update: if isSignedIn() &&
+          isValidSupportTicket(incoming()) &&
+          isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(ticketId) &&
+          existing().status != 'Closed' &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().ticketNumber == existing().ticketNumber &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            // Action 1: Update Ticket Details or Add Follow-up Note
+            (
+              incoming().status == existing().status &&
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'subject', 'category', 'priority', 'description',
+                'contactEmail', 'relatedPolicyId', 'resolutionNote', 'updatedAt'
+              ])
+            ) ||
+            // Action 2: Transition Ticket Status (e.g., Open/In Progress -> Resolved or Closed)
+            (
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'status', 'resolutionNote', 'updatedAt'
+              ])
+            )
+          ) &&
+          hasValidParentUser(userId);
+
+        allow delete: if isVerifiedUser() &&
+          isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(ticketId) &&
+          hasValidParentUser(userId);
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-850: #151f32;
+}
+
+/* Light theme surface adaptation when selected in Settings -> Appearance */
+html.theme-light {
+  color-scheme: light;
+}
+
+html.theme-light .bg-slate-950 {
+  background-color: #f1f5f9;
+}
+
+html.theme-light .bg-slate-900,
+html.theme-light .bg-slate-900\/60 {
+  background-color: #ffffff;
+}
+
+html.theme-light .bg-slate-850,
+html.theme-light .bg-slate-800\/60 {
+  background-color: #f8fafc;
+}
+
+html.theme-light .bg-slate-800 {
+  background-color: #e2e8f0;
+}
+
+html.theme-light .border-slate-800,
+html.theme-light .border-slate-800\/80,
+html.theme-light .border-slate-700 {
+  border-color: #cbd5e1;
+}
+
+html.theme-light .text-slate-100,
+html.theme-light .text-white {
+  color: #0f172a;
+}
+
+html.theme-light .text-slate-200,
+html.theme-light .text-slate-300 {
+  color: #1e293b;
+}
+
+html.theme-light .text-slate-400,
+html.theme-light .text-slate-500 {
+  color: #475569;
+}
+
+/* Preserve white text on vibrant accent buttons & badges in light mode */
+html.theme-light .bg-cyan-600,
+html.theme-light .bg-blue-600,
+html.theme-light .bg-rose-600,
+html.theme-light .bg-emerald-600,
+html.theme-light .from-cyan-600 {
+  color: #ffffff !important;
+}
+
+html.theme-light .bg-cyan-600 .text-white,
+html.theme-light .from-cyan-600 .text-white {
+  color: #ffffff !important;
+}
+

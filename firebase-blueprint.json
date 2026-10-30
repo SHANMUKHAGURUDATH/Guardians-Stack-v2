@@ -1,0 +1,552 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Core authenticated user account header document without sensitive PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID matching the document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the account holder.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "authProvider": {
+          "type": "string",
+          "description": "Authentication provider identifier.",
+          "maxLength": 32,
+          "enum": ["password", "google.com"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the account was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the account was last updated."
+        }
+      },
+      "required": ["uid", "displayName", "authProvider", "createdAt", "updatedAt"]
+    },
+    "UserPrivateProfile": {
+      "title": "UserPrivateProfile",
+      "description": "Strictly isolated PII profile document for the authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary email address of the user.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number.",
+          "maxLength": 30
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of birth string (YYYY-MM-DD).",
+          "maxLength": 20
+        },
+        "city": {
+          "type": "string",
+          "description": "Residential city.",
+          "maxLength": 100
+        },
+        "occupation": {
+          "type": "string",
+          "description": "Occupation or professional title.",
+          "maxLength": 100
+        },
+        "bio": {
+          "type": "string",
+          "description": "Optional policyholder profile summary.",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "email",
+        "phone",
+        "dateOfBirth",
+        "city",
+        "occupation",
+        "bio",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "User preferences for theme, language, notifications, and privacy controls.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "theme": {
+          "type": "string",
+          "description": "Preferred visual theme.",
+          "maxLength": 16,
+          "enum": ["dark", "light", "system"]
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred display language.",
+          "maxLength": 32,
+          "enum": ["English", "Hindi", "Telugu", "Tamil", "Kannada", "Marathi", "Bengali"]
+        },
+        "notifyPremiumAlerts": {
+          "type": "boolean",
+          "description": "Receive premium renewal alerts."
+        },
+        "notifyPolicyUpdates": {
+          "type": "boolean",
+          "description": "Receive underwriting and policy notifications."
+        },
+        "notifyNomineeReminders": {
+          "type": "boolean",
+          "description": "Receive nominee verification reminders."
+        },
+        "notifySecurityAlerts": {
+          "type": "boolean",
+          "description": "Receive security and sign-in alerts."
+        },
+        "notifySupportUpdates": {
+          "type": "boolean",
+          "description": "Receive support ticket status updates."
+        },
+        "maskSensitiveData": {
+          "type": "boolean",
+          "description": "Mask contact details by default across views."
+        },
+        "sessionPersistence": {
+          "type": "string",
+          "description": "Browser session persistence mode.",
+          "maxLength": 16,
+          "enum": ["local", "session"]
+        },
+        "activityAuditEnabled": {
+          "type": "boolean",
+          "description": "Track account security events."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "theme",
+        "language",
+        "notifyPremiumAlerts",
+        "notifyPolicyUpdates",
+        "notifyNomineeReminders",
+        "notifySecurityAlerts",
+        "notifySupportUpdates",
+        "maskSensitiveData",
+        "sessionPersistence",
+        "activityAuditEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FamilyMember": {
+      "title": "FamilyMember",
+      "description": "Individual family member profile belonging to an authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full legal name of the family member.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "relationship": {
+          "type": "string",
+          "description": "Relationship to primary policyholder.",
+          "maxLength": 32,
+          "enum": [
+            "Father",
+            "Mother",
+            "Spouse",
+            "Son",
+            "Daughter",
+            "Brother",
+            "Sister",
+            "Father-in-Law",
+            "Mother-in-Law",
+            "Grandparent",
+            "Other"
+          ]
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of birth (YYYY-MM-DD).",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "gender": {
+          "type": "string",
+          "description": "Gender of the family member.",
+          "maxLength": 16,
+          "enum": ["Male", "Female", "Other"]
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the family member.",
+          "maxLength": 30
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the family member.",
+          "maxLength": 254
+        },
+        "address": {
+          "type": "string",
+          "description": "Residential address or city.",
+          "maxLength": 300
+        },
+        "bloodGroup": {
+          "type": "string",
+          "description": "Blood group classification.",
+          "maxLength": 10
+        },
+        "occupation": {
+          "type": "string",
+          "description": "Occupation or student status.",
+          "maxLength": 100
+        },
+        "isDependent": {
+          "type": "boolean",
+          "description": "Whether financially dependent on primary policyholder."
+        },
+        "emergencyContact": {
+          "type": "boolean",
+          "description": "Whether designated as an emergency contact."
+        },
+        "medicalNotes": {
+          "type": "string",
+          "description": "Important medical or underwriting notes.",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "fullName",
+        "relationship",
+        "dateOfBirth",
+        "gender",
+        "phone",
+        "email",
+        "address",
+        "bloodGroup",
+        "occupation",
+        "isDependent",
+        "emergencyContact",
+        "medicalNotes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FamilyNominee": {
+      "title": "FamilyNominee",
+      "description": "Insurance beneficiary/nominee record linked to a family member and policy with percentage share.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "nomineeName": {
+          "type": "string",
+          "description": "Full legal name of the nominee.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "relationship": {
+          "type": "string",
+          "description": "Relationship of nominee to insured member.",
+          "maxLength": 32,
+          "enum": [
+            "Spouse",
+            "Father",
+            "Mother",
+            "Son",
+            "Daughter",
+            "Brother",
+            "Sister",
+            "Grandparent",
+            "Legal Heir",
+            "Trust",
+            "Other"
+          ]
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Nominee date of birth (YYYY-MM-DD).",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "phone": {
+          "type": "string",
+          "description": "Nominee contact phone number.",
+          "maxLength": 30
+        },
+        "email": {
+          "type": "string",
+          "description": "Nominee contact email.",
+          "maxLength": 254
+        },
+        "address": {
+          "type": "string",
+          "description": "Nominee postal address.",
+          "maxLength": 300
+        },
+        "linkedMemberId": {
+          "type": "string",
+          "description": "Insured family member ID or SELF.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "linkedMemberName": {
+          "type": "string",
+          "description": "Display name of the insured family member.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "policyId": {
+          "type": "string",
+          "description": "Associated insurance policy identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "policyName": {
+          "type": "string",
+          "description": "Associated insurance policy display name.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "allocationPct": {
+          "type": "number",
+          "description": "Percentage share allocated to this nominee (1 to 100)."
+        },
+        "guardianName": {
+          "type": "string",
+          "description": "Appointee or legal guardian name if nominee is a minor.",
+          "maxLength": 100
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional nomination notes or KYC reference.",
+          "maxLength": 400
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "nomineeName",
+        "relationship",
+        "dateOfBirth",
+        "phone",
+        "email",
+        "address",
+        "linkedMemberId",
+        "linkedMemberName",
+        "policyId",
+        "policyName",
+        "allocationPct",
+        "guardianName",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Help and support ticket submitted by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ticketNumber": {
+          "type": "string",
+          "description": "Human-readable ticket reference ID.",
+          "minLength": 4,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Concise issue summary.",
+          "minLength": 3,
+          "maxLength": 150
+        },
+        "category": {
+          "type": "string",
+          "description": "Issue category classification.",
+          "maxLength": 32,
+          "enum": ["Account", "Technical", "General", "Other"]
+        },
+        "priority": {
+          "type": "string",
+          "description": "Urgency level.",
+          "maxLength": 16,
+          "enum": ["Low", "Medium", "High", "Urgent"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle status of the support ticket.",
+          "maxLength": 20,
+          "enum": ["Open", "In Progress", "Resolved", "Closed"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the support request.",
+          "minLength": 5,
+          "maxLength": 2000
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Email address for ticket correspondence.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "relatedPolicyId": {
+          "type": "string",
+          "description": "Optional related policy identifier.",
+          "maxLength": 128
+        },
+        "resolutionNote": {
+          "type": "string",
+          "description": "User follow-up or resolution note.",
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "ticketNumber",
+        "subject",
+        "category",
+        "priority",
+        "status",
+        "description",
+        "contactEmail",
+        "relatedPolicyId",
+        "resolutionNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserAccount",
+      "description": "Root user account header documents."
+    },
+    "/users/{userId}/private/{profileId}": {
+      "schema": "UserPrivateProfile",
+      "description": "Strictly isolated PII profile subcollection."
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": "UserSettings",
+      "description": "User account preferences and security settings."
+    },
+    "/users/{userId}/familyMembers/{memberId}": {
+      "schema": "FamilyMember",
+      "description": "Family member records owned by the user."
+    },
+    "/users/{userId}/nominees/{nomineeId}": {
+      "schema": "FamilyNominee",
+      "description": "Nominee allocation records owned by the user."
+    },
+    "/users/{userId}/supportTickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Help and support tickets submitted by the user."
+    }
+  }
+}
